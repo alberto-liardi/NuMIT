@@ -11,6 +11,7 @@ out = "Results_PhiID/";
 subject = "A";
 nb_channels = 4; 
 conditions = ["Test A", "Test B"];
+red_fun = "CCS";
 
 for cond = 1:length(conditions)
     subject_info.name = subject;
@@ -23,7 +24,7 @@ for cond = 1:length(conditions)
 
     % set the parameters and prepare the data
     parameters = struct('channels', nb_channels, 'runs', 100, ...
-                        'epochs', 30, "red_fun", "MMI");
+                        'epochs', 30, "red_fun", red_fun);
     
     % load the data. 
     % here we use synthetic time series generated from a random VAR model 
@@ -46,13 +47,13 @@ end
 % Load the Raw atoms calculated above and normalise them via NuMIT
 for cond = 1:length(conditions)
     fprintf("Doing subject %s condition %s and %d channels \n", subject, conditions(cond), nb_channels);
-    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond);
+    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond)+"/"+red_fun;
     
     % load the raw atoms
     [atoms, MI] = LoadPhiID(outpath+"/data.csv");
     
     % set the model and run the null procedure
-    model = struct('name',"VAR",'S',nb_channels,'n',100,'red_fun',"CCS");
+    model = struct('name',"VAR",'S',nb_channels,'n',100,'red_fun',red_fun);
     qatoms = NuMIT_PhiID(atoms, MI, model);
     
     % save the quantiles (normalised atoms)
@@ -65,7 +66,7 @@ end
 %%% Plot results for the Raw atoms %%%
 for cond=1:2
     % load the raw atoms
-    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond);
+    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond)+"/"+red_fun;
     [atoms, MI] = LoadPhiID(outpath+"/data.csv");
     % transform cell of struct into a 2D array
     phiid_atoms(:,:,cond) = cellstruct2mat(atoms);
@@ -81,7 +82,7 @@ ViolinPlot(atoms,labels,conditions(1)+" - "+conditions(2),"Raw atoms");
 %%% Plot results for the NuMIT atoms %%%
 for cond=1:2
     % load the NuMIT-normalised atoms
-    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond);
+    outpath = out+"/"+subject+"_c"+nb_channels+"/"+conditions(cond)+"/"+red_fun;
     [atoms, ~] = LoadPhiID(outpath+"/Quantiles_PhiID.csv");
     % transform cell of struct into a 2D array
     phiid_atoms(:,:,cond) = cellstruct2mat(atoms);
