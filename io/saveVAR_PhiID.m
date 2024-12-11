@@ -18,6 +18,7 @@
 %                     - channels  : Number of channels used in the analysis.
 %                     - epochs    : Number of epochs in the data.
 %                     - runs      : Number of runs in the VAR PhiID procedure.
+%                     - red_fun   : Redundancy function used for PhiID (MMI (default), CCS)
 %                 * PhiIDs    - Cell array of structs representing PhiID atoms, where each struct contains the PhiID values.
 %   out         - Output directory path where files will be saved.
 % 
@@ -35,6 +36,7 @@ function [] = saveVAR_PhiID(Information, out)
     % only useful for psychedelic analysis
     if ~isfield(Information.subject_info, 'drug'), Information.subject_info.drug=""; end
     if ~isfield(Information.subject_info, 'ID'), Information.subject_info.ID=""; end
+    if ~isfield(Information.parameters, 'red_fun'), Information.parameters.red_fun="MMI"; end
 
     % creating the name of the path
     if ~isstring(Information.subject_info.name) && ~ischar(Information.subject_info.name)
@@ -42,10 +44,12 @@ function [] = saveVAR_PhiID(Information, out)
     else, name = Information.subject_info.name;
     end
     state = Information.subject_info.condition;
+    red_fun = Information.parameters.red_fun;
     subdir = strcat(Information.subject_info.drug,'/');
     
     path = strcat(out, subdir, name, '_c', ...
-                  sprintf('%01d',Information.parameters.channels), '/', state, '/');
+                  sprintf('%01d',Information.parameters.channels), '/', ...
+                  state, '/', red_fun, '/');
     if not(isfolder(path)), mkdir(path); end
     
     

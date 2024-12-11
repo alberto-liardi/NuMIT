@@ -12,8 +12,9 @@
 %   S          - Number of sources in the system (must be even).
 %   p          - Order of the VAR model (default is 1). PhiID and Phis only support p=1.
 %   N_runs     - Number of runs for the simulation (default is 1,000).
-%   red_fun    - Redundancy functions to use: "MMI" (default), "DEP", "CCS", or "all" (for all functions).
-%                Only useful for PID; PhiID and Phis only support MMI.
+%   red_fun    - Redundancy functions to use: 
+%                For PID: "MMI" (default), "DEP", "CCS", or "all" (for all functions).
+%                For PhiID: "MMI" (default), or "CCS".
 %   methods    - Array containing the information metrics to compute: "PID", "PhiID", "Phis" (default: ["PID"]).
 %                Choose ["PID"] for a VAR(p) model with p>1.
 %
@@ -95,7 +96,7 @@ function [PIDs, PhiIDs, Phis] = Null_model_VAR(MI,S,p,N_runs,red_fun,methods)
         end
 
         if ismember("PhiID", methods)
-            PhiID = PhiID_VAR_calculator(p,A,V,S/2,S/2);
+            PhiID = PhiID_VAR_calculator(p,A,V,S/2,S/2,red_fun);
             if check_MI_PhiID(PhiID, MI)==0, nerr=nerr+1; continue; end
             PhiIDs{j} = PhiID;
         end

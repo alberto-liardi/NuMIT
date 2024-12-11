@@ -21,8 +21,9 @@
 %                    * mmorder   - Maximum model order for the VAR model (default: 30).
 %                                  !! For PhiID and Phis, mmorder is overwritten and set to 1.
 %                                  !! If p > 1, only "PID" can be used as a method.
-%                    * red_fun   - Redundancy functions to use: "MMI" (default), "DEP", "CCS", or "all" (for all functions).
-%                                  !! Only useful for PID; for PhiID and Phis, only MMI is used.
+%                    * red_fun   - Redundancy functions to use. 
+%                                  For PID: "MMI" (default), "DEP", "CCS", or "all" (for all functions).
+%                                  For PhiID: "MMI" (default), or "CCS".
 %   methods        - Array containing the information metrics to compute. Available options: 
 %                    "PID", "PhiID", "Phis" (default: ["PID", "PhiID", "Phis"]).
 %                    !! Choose ["PID"] if p > 1.
@@ -70,6 +71,7 @@ function Information = VAR_analysis(data, subject_info, par, methods)
 
     if ismember("PhiID", methods)
         par.mmorder = 1;
+        if ~isfield(par, 'red_fun'), par.red_fun = ["MMI"]; end
         PhiIDs = cell(1, par.runs);
     end
     
@@ -120,7 +122,8 @@ function Information = VAR_analysis(data, subject_info, par, methods)
 
         % computing PhiID atoms
         if ismember("PhiID", methods)
-            [PhiIDs{N}, Gammas] = PhiID_VAR_calculator(p,A,V,par.channels/2,par.channels/2);
+            [PhiIDs{N}, Gammas] = PhiID_VAR_calculator(p,A,V,par.channels/2, ...
+                                        par.channels/2,par.red_fun);
         end
         
         % computing Phi_WMS and Phi_R

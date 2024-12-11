@@ -22,7 +22,8 @@ for cond = 1:length(conditions)
             subject_info.name,subject_info.condition,nb_channels);
 
     % set the parameters and prepare the data
-    parameters = struct('channels', nb_channels, 'runs', 100, 'epochs', 30);
+    parameters = struct('channels', nb_channels, 'runs', 100, ...
+                        'epochs', 30, "red_fun", "MMI");
     
     % load the data. 
     % here we use synthetic time series generated from a random VAR model 
@@ -51,7 +52,7 @@ for cond = 1:length(conditions)
     [atoms, MI] = LoadPhiID(outpath+"/data.csv");
     
     % set the model and run the null procedure
-    model = struct('name',"VAR",'S',nb_channels,'n',100);
+    model = struct('name',"VAR",'S',nb_channels,'n',100,'red_fun',"CCS");
     qatoms = NuMIT_PhiID(atoms, MI, model);
     
     % save the quantiles (normalised atoms)

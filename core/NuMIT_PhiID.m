@@ -27,11 +27,12 @@
 %              sts - {12}->{12} atom
 %   MI       - [L] array of total mutual information values.
 %   model    - Struct with the following fields:
-%              name  - "VAR", name of the model (currently, only "VAR" is supported).
-%              S     - Number of sources.
-%              T     - Number of targets.
-%              n     - Number of iterations of the null model for each set of PhiID atoms.
-%              p     - [L] array of model orders.
+%              name      - "VAR", name of the model (currently, only "VAR" is supported).
+%              S         - Number of sources.
+%              T         - Number of targets.
+%              n         - Number of iterations of the null model for each set of PhiID atoms.
+%              p         - [L] array of model orders.
+%              red_fun   - Redundancy function for PhiID. "MMI" (default) or "CCS".
 % 
 % Outputs:
 %   qPhiIDs  - [16, L] matrix of quantile values for the atoms computed with the null model, ordered as listed in the `atoms` input.
@@ -53,11 +54,14 @@ function [qPhiIDs, nPhiIDs] = NuMIT_PhiID(atoms, MI, model)
     if ~isfield(model, 'n'), model.n=[]; end
     if ~isfield(model, 'S'), model.S=2; end
     if ~isfield(model, 'T'), model.T=1; end
+    if ~isfield(model, 'red_fun'), model.red_fun=["MMI"]; end
     
     nPhiIDs = cell(1,length(MI));
     if model.name == "VAR"
         for m = 1:length(MI) 
-            [~, nPhiIDs{m}, ~] = Null_model_VAR(MI(m), model.S, model.p(m), model.n, ["MMI"], ["PhiID"]);
+            if mod(m,length(MI)/10)==0, fprintf("Done %d%% of null distributions!\n", m); end
+            [~, nPhiIDs{m}, ~] = Null_model_VAR(MI(m), model.S, model.p(m), ...
+                                        model.n, model.red_fun, ["PhiID"]);
         end
     else 
         error("Not a valid model type inserted, exiting."); 

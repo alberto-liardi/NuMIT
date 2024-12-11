@@ -9,11 +9,12 @@
 %   It returns the PhiID atoms in a struct and the autocovariance matrices of the VAR model.
 % 
 % Inputs:
-%   p       - Order of the VAR(p) model.
-%   A       - [p] cell array of [L1+L2, L1+L2] matrix coefficients of the VAR model.
-%   V       - [L1+L2, L1+L2] residual covariance matrix.
-%   L1      - Length of the first source.
-%   L2      - Length of the second source.
+%   p          - Order of the VAR(p) model.
+%   A          - [p] cell array of [L1+L2, L1+L2] matrix coefficients of the VAR model.
+%   V          - [L1+L2, L1+L2] residual covariance matrix.
+%   L1         - Length of the first source.
+%   L2         - Length of the second source.
+%   red_fun    - Redundancy functions to use: "MMI" (default), or "CCS".
 % 
 % Outputs:
 %   atoms   - Struct containing PhiID atoms with the following fields:
@@ -44,7 +45,7 @@
 % Alberto Liardi, 2024
 
 
-function [atoms, Gamma] = PhiID_VAR_calculator(p,A,V,L1,L2)
+function [atoms, Gamma] = PhiID_VAR_calculator(p,A,V,L1,L2,red_fun)
 
     L = L1 + L2; % length of the target
     
@@ -158,15 +159,28 @@ function [atoms, Gamma] = PhiID_VAR_calculator(p,A,V,L1,L2)
     MI_xytb = (H_xy + H_b - H_xyb) / log(2);
     MI_xtab = (H_x + H_ab - H_xab) / log(2);
     MI_ytab = (H_y + H_ab - H_yab) / log(2);
+
+    if red_fun=="MMI"
+        Red = @RedMMI;
+        doubleRed = @doubleRedMMI;
+    elseif red_fun=="CCS"
+        Red = @RedCCS;
+        doubleRed = @doubleRedCCS;
+    else
+        error("Redundancy function not supported! " + ...
+            "Choose between MMI and CCS"); 
+    end
     
-    Rxyta = Red(MI_xta, MI_yta);
-    Rxytb = Red(MI_xtb, MI_ytb);
-    Rabtx = Red(MI_xta, MI_xtb);
-    Rabty = Red(MI_yta, MI_ytb);
-    Rxytab = Red(MI_xtab, MI_ytab);
-    Rabtxy = Red(MI_xyta, MI_xytb);
+    Rxyta = Red(MI_xta, MI_yta, MI_xyta);
+    Rxytb = Red(MI_xtb, MI_ytb, MI_xytb);
+    Rabtx = Red(MI_xta, MI_xtb, MI_xtab);
+    Rabty = Red(MI_yta, MI_ytb, MI_ytab);
+    Rxytab = Red(MI_xtab, MI_ytab, MI_xytab);
+    Rabtxy = Red(MI_xyta, MI_xytb, MI_xytab);
     
-    doubleR = doubleRed(MI_xta, MI_xtb, MI_yta, MI_ytb);
+    doubleR = doubleRed(MI_xta, MI_xtb, MI_yta, MI_ytb, ...
+                        MI_xtab, MI_ytab, MI_xyta, MI_xytb, ...
+                        MI_xytab, Rxyta, Rxytb, Rabtx, Rabty, Rxytab, Rabtxy);
     
     
     % solve the linear system of equations
@@ -217,10 +231,27 @@ function entropy = h(S)
     entropy = 0.5*logdet(S);
 end
 
-function I = Red(I1, I2)
+function I = RedMMI(I1, I2, varargin)
     I = min([I1, I2]);
 end
 
-function I = doubleRed(I1, I2, I3, I4)
+function I = doubleRedMMI(I1, I2, I3, I4, varargin)
     I = min([I1, I2, I3, I4]);
+end
+
+function I = doubleRedCCS(I1, I2, I3, I4, Ixtab, Iytab, Ixyta, Ixytb, ...
+                    Ixytab, Rxyta, Rxytb, Rabtx, Rabty, Rxytab, Rabtxy)
+    coinfo = - I1 - I2 - I3- I4 + ...
+             + Ixtab + Iytab + Ixyta + Ixytb - Ixytab + ...
+             + Rxyta + Rxytb - Rxytab + ...
+             + Rabtx + Rabty - Rabtxy;
+    
+    signs = [sign(I1), sign(I2), sign(I3), sign(I4), sign(coinfo)];
+    I = all(signs == signs(:,1), 2).*coinfo;
+end
+
+function I = RedCCS(I1, I2, I12)
+  c = I12 - I1 - I2;
+  signs = [sign(I1), sign(I2), sign(I12), sign(-c)];
+  I = all(signs == signs(:,1), 2).*(-c);
 end
